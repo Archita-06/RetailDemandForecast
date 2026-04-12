@@ -23,11 +23,25 @@ namespace RetailDemandForecastingAPI.Controllers
             return Ok(store);
 
         }
+
+        [HttpPost("bulk")]
+        public async Task<IActionResult> CreateTask(List<Store> stores) {
+            if (stores==null|| stores.Count==0) {
+                return BadRequest("No stores provided");
+            }
+            await _context.Stores.AddRangeAsync(stores);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { inserted = stores.Count });
+        }
+
+
         [HttpGet]
         public IActionResult GetAll() {
             var stores=_context.Stores.ToList();
 
             return Ok(stores);
         }
+
     }
 }

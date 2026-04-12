@@ -37,22 +37,6 @@
   },
   {
     "ContainingType": "RetailDemandForecastingAPI.Controllers.SalesController",
-    "Method": "Create",
-    "RelativePath": "api/Sales",
-    "HttpMethod": "POST",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "sale",
-        "Type": "RetailDemandForecastingAPI.Domain.Entities.Sale",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "RetailDemandForecastingAPI.Controllers.SalesController",
     "Method": "UploadSales",
     "RelativePath": "api/Sales/upload",
     "HttpMethod": "POST",
@@ -112,6 +96,22 @@
     "IsController": true,
     "Order": 0,
     "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "RetailDemandForecastingAPI.Controllers.StoresController",
+    "Method": "CreateTask",
+    "RelativePath": "api/Stores/bulk",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "stores",
+        "Type": "System.Collections.Generic.List\u00601[[RetailDemandForecastingAPI.Domain.Entities.Store, RetailDemandForecastingAPI, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "IsRequired": true
+      }
+    ],
     "ReturnTypes": []
   }
 ]
