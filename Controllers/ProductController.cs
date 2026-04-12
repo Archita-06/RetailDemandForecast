@@ -25,6 +25,18 @@ namespace RetailDemandForecastingAPI.Controllers
             _context.SaveChanges();
             return Ok(product);
         }
+        [HttpPost("bulk")]
+        public async Task<IActionResult> CreateTask(List<Product> products)
+        {
+            if (products == null || products.Count == 0)
+            {
+                return BadRequest("No products provided");
+            }
+            await _context.Products.AddRangeAsync(products);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { inserted = products.Count });
+        }
     }
 
     
