@@ -1,14 +1,15 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using RetailDemandForecastingAPI.Domain.Entities;
-using RetailDemandForecastingAPI.Persistence;
 using OfficeOpenXml;
+using RetailDemandForecastingAPI.Domain.Entities;
+using RetailDemandForecastingAPI.DTO;
+using RetailDemandForecastingAPI.Persistence;
 
 namespace RetailDemandForecastingAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class SalesController : ControllerBase
+    public class SalesController : Controller
     {
         private readonly AppDbContext _context;
 
@@ -19,108 +20,257 @@ namespace RetailDemandForecastingAPI.Controllers
 
         
         [HttpGet]
-        public IActionResult GetAll()
+        public async Task<IActionResult> GetAll()
         {
-            var sales = _context.Sales
-                .Include(s => s.Product)
-                .Include(s => s.Store)
-                .ToList();
+            var sales = await _context.Sales
+                .Select(s => new
+                {
+                    s.Date,
+                    s.QuantitySold,
+                    StoreCode = s.Store.StoreCode,
+                    ProductCode = s.Product.ProductCode
+                })
+                .ToListAsync();
 
             return Ok(sales);
         }
 
         
-        [HttpPost("upload")]
-        public async Task<IActionResult> UploadSales(IFormFile file)
+        [HttpGet("{storeCode}/{productCode}")]
+        public async Task<IActionResult> GetProductSalesInStore(string storeCode, string productCode)
         {
-            if (file == null || file.Length == 0)
-                return BadRequest("File is empty.");
+            var storeId = await _context.Stores
+                .Where(s => s.StoreCode == storeCode)
+                .Select(s => s.Id)
+                .FirstOrDefaultAsync();
 
-            var extension = Path.GetExtension(file.FileName).ToLower();
+            var productId = await _context.Products
+                .Where(p => p.ProductCode == productCode)
+                .Select(p => p.Id)
+                .FirstOrDefaultAsync();
 
-            List<Sale> salesList;
-            int skipped;
+            if (storeId == 0 || productId == 0)
+                return NotFound("Invalid store or product");
 
-            if (extension == ".csv")
-            {
-                (salesList, skipped) = await ProcessCsv(file);
-            }
-            else if (extension == ".xlsx")
-            {
-                (salesList, skipped) = await ProcessExcel(file);
-            }
-            else
-            {
-                return BadRequest("Unsupported file type");
-            }
+            var sales = await _context.Sales
+                .Where(s => s.StoreId == storeId && s.ProductId == productId)
+                .OrderBy(s => s.Date)
+                .Select(s => new
+                {
+                    s.Date,
+                    s.QuantitySold,
+                    s.BatchId,
+                    s.UploadType
+                })
+                .ToListAsync();
 
-            if (salesList.Count == 0)
-                return BadRequest("No valid data found");
-
-            await _context.Sales.AddRangeAsync(salesList);
-            await _context.SaveChangesAsync();
-
-            return Ok(new
-            {
-                inserted = salesList.Count,
-                skipped
-            });
+            return Ok(sales);
         }
 
-  
-        [HttpPost("upload-single-store")]
-        public async Task<IActionResult> UploadSalesForStore(IFormFile file, [FromQuery] int storeId)
+       
+        [HttpGet("store/{storeCode}")]
+        public async Task<IActionResult> GetAllSalesForStore(string storeCode)
+        {
+            var storeId = await _context.Stores
+                .Where(s => s.StoreCode == storeCode)
+                .Select(s => s.Id)
+                .FirstOrDefaultAsync();
+
+            if (storeId == 0)
+                return NotFound("Invalid store");
+
+            var sales = await _context.Sales
+                .Where(s => s.StoreId == storeId)
+                .OrderBy(s => s.Date)
+                .Select(s => new
+                {
+                    s.Date,
+                    s.QuantitySold,
+                    ProductCode = s.Product.ProductCode
+                })
+                .ToListAsync();
+
+            return Ok(sales);
+        }
+
+        
+        [HttpGet("product/{productCode}")]
+        public async Task<IActionResult> GetAllSalesForProduct(string productCode)
+        {
+            var productId = await _context.Products
+                .Where(p => p.ProductCode == productCode)
+                .Select(p => p.Id)
+                .FirstOrDefaultAsync();
+
+            if (productId == 0)
+                return NotFound("Invalid product");
+
+            var sales = await _context.Sales
+                .Where(s => s.ProductId == productId)
+                .OrderBy(s => s.Date)
+                .Select(s => new
+                {
+                    s.Date,
+                    s.QuantitySold,
+                    StoreCode = s.Store.StoreCode
+                })
+                .ToListAsync();
+
+            return Ok(sales);
+        }
+
+   
+        [HttpGet("range")]
+        public async Task<IActionResult> GetSalesByDateRange(DateTime start, DateTime end)
+        {
+            var sales = await _context.Sales
+                .Where(s => s.Date >= start && s.Date <= end)
+                .OrderBy(s => s.Date)
+                .Select(s => new
+                {
+                    s.Date,
+                    s.QuantitySold,
+                    StoreCode = s.Store.StoreCode,
+                    ProductCode = s.Product.ProductCode
+                })
+                .ToListAsync();
+
+            return Ok(sales);
+        }
+
+        [HttpGet("daily/{storeCode}/{productCode}")]
+        public async Task<IActionResult> GetDailySales(string storeCode, string productCode)
+        {
+            var storeId = await _context.Stores
+                .Where(s => s.StoreCode == storeCode)
+                .Select(s => s.Id)
+                .FirstOrDefaultAsync();
+
+            var productId = await _context.Products
+                .Where(p => p.ProductCode == productCode)
+                .Select(p => p.Id)
+                .FirstOrDefaultAsync();
+
+            if (storeId == 0 || productId == 0)
+                return NotFound("Invalid store or product");
+
+            var sales = await _context.Sales
+                .Where(s => s.StoreId == storeId && s.ProductId == productId)
+                .OrderBy(s => s.Date)
+                .Select(s => new
+                {
+                    s.Date,
+                    s.QuantitySold
+                })
+                .ToListAsync();
+
+            return Ok(sales);
+        }
+
+ 
+        [HttpPost("upload")]
+        public async Task<IActionResult> UploadSales(IFormFile file, [FromQuery] UploadType uploadType)
         {
             if (file == null || file.Length == 0)
                 return BadRequest("File is empty");
 
-            var store = _context.Stores.Find(storeId);
-            if (store == null)
-                return BadRequest("Invalid store");
-
             var extension = Path.GetExtension(file.FileName).ToLower();
 
-            List<Sale> salesList;
+            List<SalesInput> rawData;
             int skipped;
 
             if (extension == ".csv")
-            {
-                (salesList, skipped) = await ProcessCsvSingleStore(file, storeId);
-            }
+                (rawData, skipped) = await ProcessCsv(file);
             else if (extension == ".xlsx")
-            {
-                (salesList, skipped) = await ProcessExcelSingleStore(file, storeId);
-            }
+                (rawData, skipped) = await ProcessExcel(file);
             else
+                return BadRequest("Unsupported file format.");
+
+            if (rawData.Count == 0)
+                return BadRequest("No valid data");
+
+ 
+            var groupedData = rawData
+                .GroupBy(x => new { x.StoreCode, x.ProductCode, x.Date })
+                .Select(g => new
+                {
+                    g.Key.StoreCode,
+                    g.Key.ProductCode,
+                    g.Key.Date,
+                    Quantity = g.Sum(x => x.Quantity)
+                })
+                .ToList();
+
+            var batchId = Guid.NewGuid().ToString();
+
+            int inserted = 0, updated = 0;
+
+            foreach (var item in groupedData)
             {
-                return BadRequest("Unsupported file type");
+                var store = await _context.Stores
+                    .FirstOrDefaultAsync(s => s.StoreCode == item.StoreCode);
+
+                var product = await _context.Products
+                    .FirstOrDefaultAsync(p => p.ProductCode == item.ProductCode);
+
+                if (store == null || product == null)
+                {
+                    skipped++;
+                    continue;
+                }
+
+                var existing = await _context.Sales.FirstOrDefaultAsync(s =>
+                    s.StoreId == store.Id &&
+                    s.ProductId == product.Id &&
+                    s.Date == item.Date);
+
+                if (existing == null)
+                {
+                    await _context.Sales.AddAsync(new Sale
+                    {
+                        StoreId = store.Id,
+                        ProductId = product.Id,
+                        Date = item.Date,
+                        QuantitySold = item.Quantity,
+                        BatchId = batchId,
+                        UploadType = uploadType
+                    });
+                    inserted++;
+                }
+                else
+                {
+                    if (uploadType == UploadType.INCREMENTAL)
+                    {
+                        existing.QuantitySold += item.Quantity;
+                    }
+                    else if (uploadType == UploadType.SNAPSHOT &&
+                             item.Quantity > existing.QuantitySold)
+                    {
+                        existing.QuantitySold = item.Quantity;
+                    }
+
+                    existing.BatchId = batchId;
+                    existing.UploadType = uploadType;
+
+                    updated++;
+                }
             }
 
-            if (salesList.Count == 0)
-                return BadRequest("No valid data found");
-
-            await _context.Sales.AddRangeAsync(salesList);
             await _context.SaveChangesAsync();
 
-            return Ok(new
-            {
-                inserted = salesList.Count,
-                skipped
-            });
+            return Ok(new { batchId, inserted, updated, skipped });
         }
 
-        
-
-        private async Task<(List<Sale>, int)> ProcessCsv(IFormFile file)
+ 
+        private async Task<(List<SalesInput>, int)> ProcessCsv(IFormFile file)
         {
-            var salesList = new List<Sale>();
+            var list = new List<SalesInput>();
             int skipped = 0;
 
             using var reader = new StreamReader(file.OpenReadStream());
             await reader.ReadLineAsync();
 
             string? line;
-
             while ((line = await reader.ReadLineAsync()) != null)
             {
                 if (string.IsNullOrWhiteSpace(line))
@@ -134,45 +284,28 @@ namespace RetailDemandForecastingAPI.Controllers
                     continue;
                 }
 
-                var productName = values[0].Trim();
-                var storeName = values[1].Trim();
-
-                var product = _context.Products
-                    .FirstOrDefault(p => p.Name.ToLower() == productName.ToLower());
-
-                var store = _context.Stores
-                    .FirstOrDefault(s => s.Name.ToLower() == storeName.ToLower());
-
-                if (product == null || store == null)
-                {
-                    skipped++;
-                    continue;
-                }
-
                 if (!DateTime.TryParse(values[2], out var date) ||
-                    !int.TryParse(values[3], out var quantity))
+                    !int.TryParse(values[3], out var qty))
                 {
                     skipped++;
                     continue;
                 }
 
-                salesList.Add(new Sale
+                list.Add(new SalesInput
                 {
-                    ProductId = product.Id,
-                    StoreId = store.Id,
+                    StoreCode = values[0].Trim(),
+                    ProductCode = values[1].Trim(),
                     Date = date,
-                    QuantitySold = quantity
+                    Quantity = qty
                 });
             }
 
-            return (salesList, skipped);
+            return (list, skipped);
         }
 
-       
-
-        private async Task<(List<Sale>, int)> ProcessExcel(IFormFile file)
+        private async Task<(List<SalesInput>, int)> ProcessExcel(IFormFile file)
         {
-            var salesList = new List<Sale>();
+            var list = new List<SalesInput>();
             int skipped = 0;
 
             using var stream = new MemoryStream();
@@ -183,150 +316,30 @@ namespace RetailDemandForecastingAPI.Controllers
             using var package = new ExcelPackage(stream);
             var worksheet = package.Workbook.Worksheets[0];
 
-            int rowCount = worksheet.Dimension.Rows;
+            int rows = worksheet.Dimension.Rows;
 
-            for (int row = 2; row <= rowCount; row++)
+            for (int row = 2; row <= rows; row++)
             {
-                var productName = worksheet.Cells[row, 1].Text.Trim();
-                var storeName = worksheet.Cells[row, 2].Text.Trim();
-                var dateText = worksheet.Cells[row, 3].Text;
-                var qtyText = worksheet.Cells[row, 4].Text;
+                var storeCode = worksheet.Cells[row, 1].Text.Trim();
+                var productCode = worksheet.Cells[row, 2].Text.Trim();
 
-                var product = _context.Products
-                    .FirstOrDefault(p => p.Name.ToLower() == productName.ToLower());
-
-                var store = _context.Stores
-                    .FirstOrDefault(s => s.Name.ToLower() == storeName.ToLower());
-
-                if (product == null || store == null)
+                if (!DateTime.TryParse(worksheet.Cells[row, 3].Text, out var date) ||
+                    !int.TryParse(worksheet.Cells[row, 4].Text, out var qty))
                 {
                     skipped++;
                     continue;
                 }
 
-                if (!DateTime.TryParse(dateText, out var date) ||
-                    !int.TryParse(qtyText, out var qty))
+                list.Add(new SalesInput
                 {
-                    skipped++;
-                    continue;
-                }
-
-                salesList.Add(new Sale
-                {
-                    ProductId = product.Id,
-                    StoreId = store.Id,
+                    StoreCode = storeCode,
+                    ProductCode = productCode,
                     Date = date,
-                    QuantitySold = qty
+                    Quantity = qty
                 });
             }
 
-            return (salesList, skipped);
-        }
-
-      
-
-        private async Task<(List<Sale>, int)> ProcessCsvSingleStore(IFormFile file, int storeId)
-        {
-            var salesList = new List<Sale>();
-            int skipped = 0;
-
-            using var reader = new StreamReader(file.OpenReadStream());
-            await reader.ReadLineAsync();
-
-            string? line;
-
-            while ((line = await reader.ReadLineAsync()) != null)
-            {
-                if (string.IsNullOrWhiteSpace(line))
-                    continue;
-
-                var values = line.Split(',');
-
-                if (values.Length < 3)
-                {
-                    skipped++;
-                    continue;
-                }
-
-                var productName = values[0].Trim();
-
-                var product = _context.Products
-                    .FirstOrDefault(p => p.Name.ToLower() == productName.ToLower());
-
-                if (product == null)
-                {
-                    skipped++;
-                    continue;
-                }
-
-                if (!DateTime.TryParse(values[1], out var date) ||
-                    !int.TryParse(values[2], out var qty))
-                {
-                    skipped++;
-                    continue;
-                }
-
-                salesList.Add(new Sale
-                {
-                    ProductId = product.Id,
-                    StoreId = storeId,
-                    Date = date,
-                    QuantitySold = qty
-                });
-            }
-
-            return (salesList, skipped);
-        }
-
-      
-
-        private async Task<(List<Sale>, int)> ProcessExcelSingleStore(IFormFile file, int storeId)
-        {
-            var salesList = new List<Sale>();
-            int skipped = 0;
-
-            using var stream = new MemoryStream();
-            await file.CopyToAsync(stream);
-
-            ExcelPackage.License.SetNonCommercialPersonal("Dev");
-
-            using var package = new ExcelPackage(stream);
-            var worksheet = package.Workbook.Worksheets[0];
-
-            int rowCount = worksheet.Dimension.Rows;
-
-            for (int row = 2; row <= rowCount; row++)
-            {
-                var productName = worksheet.Cells[row, 1].Text.Trim();
-                var dateText = worksheet.Cells[row, 2].Text;
-                var qtyText = worksheet.Cells[row, 3].Text;
-
-                var product = _context.Products
-                    .FirstOrDefault(p => p.Name.ToLower() == productName.ToLower());
-
-                if (product == null)
-                {
-                    skipped++;
-                    continue;
-                }
-
-                if (!DateTime.TryParse(dateText, out var date) ||
-                    !int.TryParse(qtyText, out var qty))
-                {
-                    skipped++;
-                    continue;
-                }
-
-                salesList.Add(new Sale
-                {
-                    ProductId = product.Id,
-                    StoreId = storeId,
-                    Date = date,
-                    QuantitySold = qty
-                });
-            }
-
-            return (salesList, skipped);
+            return (list, skipped);
         }
     }
 }

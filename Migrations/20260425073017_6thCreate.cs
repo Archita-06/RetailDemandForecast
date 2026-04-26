@@ -5,7 +5,7 @@
 namespace RetailDemandForecastingAPI.Migrations
 {
     /// <inheritdoc />
-    public partial class thirdOp : Migration
+    public partial class _6thCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

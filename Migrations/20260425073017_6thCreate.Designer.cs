@@ -12,8 +12,8 @@ using RetailDemandForecastingAPI.Persistence;
 namespace RetailDemandForecastingAPI.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260412171241_10thOp")]
-    partial class _10thOp
+    [Migration("20260425073017_6thCreate")]
+    partial class _6thCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -93,9 +93,6 @@ namespace RetailDemandForecastingAPI.Migrations
 
                     b.HasKey("ID");
 
-                    b.HasIndex("ProductId", "StoreId")
-                        .IsUnique();
-
                     b.ToTable("Inventories");
                 });
 
@@ -115,7 +112,14 @@ namespace RetailDemandForecastingAPI.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("ProductCode")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("ProductCode")
+                        .IsUnique();
 
                     b.ToTable("Products");
                 });
@@ -127,6 +131,10 @@ namespace RetailDemandForecastingAPI.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("BatchId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("Date")
                         .HasColumnType("datetime2");
@@ -140,11 +148,15 @@ namespace RetailDemandForecastingAPI.Migrations
                     b.Property<int>("StoreId")
                         .HasColumnType("int");
 
+                    b.Property<int>("UploadType")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("ProductId");
-
                     b.HasIndex("StoreId");
+
+                    b.HasIndex("ProductId", "StoreId", "Date")
+                        .IsUnique();
 
                     b.ToTable("Sales");
                 });
@@ -165,7 +177,14 @@ namespace RetailDemandForecastingAPI.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("StoreCode")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("StoreCode")
+                        .IsUnique();
 
                     b.ToTable("Stores");
                 });

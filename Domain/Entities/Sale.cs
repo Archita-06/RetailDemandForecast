@@ -12,5 +12,8 @@
 
         public DateTime Date { get; set; }
         public int QuantitySold { get; set; }
+        public string BatchId { get; set; } = null!;
+
+        public UploadType UploadType { get; set; }
     }
 }

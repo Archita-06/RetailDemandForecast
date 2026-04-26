@@ -27,7 +27,39 @@
   },
   {
     "ContainingType": "RetailDemandForecastingAPI.Controllers.ProductController",
-    "Method": "CreateTask",
+    "Method": "GetByCode",
+    "RelativePath": "api/Product/{code}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "code",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "RetailDemandForecastingAPI.Controllers.ProductController",
+    "Method": "Delete",
+    "RelativePath": "api/Product/{code}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "code",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "RetailDemandForecastingAPI.Controllers.ProductController",
+    "Method": "CreateBulk",
     "RelativePath": "api/Product/bulk",
     "HttpMethod": "POST",
     "IsController": true,
@@ -53,6 +85,101 @@
   },
   {
     "ContainingType": "RetailDemandForecastingAPI.Controllers.SalesController",
+    "Method": "GetProductSalesInStore",
+    "RelativePath": "api/Sales/{storeCode}/{productCode}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "storeCode",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "productCode",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "RetailDemandForecastingAPI.Controllers.SalesController",
+    "Method": "GetDailySales",
+    "RelativePath": "api/Sales/daily/{storeCode}/{productCode}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "storeCode",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "productCode",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "RetailDemandForecastingAPI.Controllers.SalesController",
+    "Method": "GetAllSalesForProduct",
+    "RelativePath": "api/Sales/product/{productCode}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "productCode",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "RetailDemandForecastingAPI.Controllers.SalesController",
+    "Method": "GetSalesByDateRange",
+    "RelativePath": "api/Sales/range",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "start",
+        "Type": "System.DateTime",
+        "IsRequired": false
+      },
+      {
+        "Name": "end",
+        "Type": "System.DateTime",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "RetailDemandForecastingAPI.Controllers.SalesController",
+    "Method": "GetAllSalesForStore",
+    "RelativePath": "api/Sales/store/{storeCode}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "storeCode",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "RetailDemandForecastingAPI.Controllers.SalesController",
     "Method": "UploadSales",
     "RelativePath": "api/Sales/upload",
     "HttpMethod": "POST",
@@ -63,35 +190,29 @@
         "Name": "file",
         "Type": "Microsoft.AspNetCore.Http.IFormFile",
         "IsRequired": false
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "RetailDemandForecastingAPI.Controllers.SalesController",
-    "Method": "UploadSalesForStore",
-    "RelativePath": "api/Sales/upload-single-store",
-    "HttpMethod": "POST",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "file",
-        "Type": "Microsoft.AspNetCore.Http.IFormFile",
-        "IsRequired": false
       },
       {
-        "Name": "storeId",
-        "Type": "System.Int32",
+        "Name": "uploadType",
+        "Type": "RetailDemandForecastingAPI.Domain.Entities.UploadType",
         "IsRequired": false
       }
     ],
     "ReturnTypes": []
   },
   {
-    "ContainingType": "RetailDemandForecastingAPI.Controllers.StoresController",
+    "ContainingType": "RetailDemandForecastingAPI.Controllers.StoreController",
+    "Method": "GetAll",
+    "RelativePath": "api/Store",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "RetailDemandForecastingAPI.Controllers.StoreController",
     "Method": "Create",
-    "RelativePath": "api/Stores",
+    "RelativePath": "api/Store",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
@@ -105,19 +226,41 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "RetailDemandForecastingAPI.Controllers.StoresController",
-    "Method": "GetAll",
-    "RelativePath": "api/Stores",
+    "ContainingType": "RetailDemandForecastingAPI.Controllers.StoreController",
+    "Method": "GetByCode",
+    "RelativePath": "api/Store/{code}",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
-    "Parameters": [],
+    "Parameters": [
+      {
+        "Name": "code",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
     "ReturnTypes": []
   },
   {
-    "ContainingType": "RetailDemandForecastingAPI.Controllers.StoresController",
-    "Method": "CreateTask",
-    "RelativePath": "api/Stores/bulk",
+    "ContainingType": "RetailDemandForecastingAPI.Controllers.StoreController",
+    "Method": "Delete",
+    "RelativePath": "api/Store/{code}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "code",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "RetailDemandForecastingAPI.Controllers.StoreController",
+    "Method": "CreateBulk",
+    "RelativePath": "api/Store/bulk",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,

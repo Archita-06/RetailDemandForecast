@@ -55,6 +55,48 @@
         }
       }
     },
+    "/api/Product/{code}": {
+      "get": {
+        "tags": [
+          "Product"
+        ],
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Product"
+        ],
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Product/bulk": {
       "post": {
         "tags": [
@@ -108,26 +150,29 @@
         }
       }
     },
-    "/api/Sales/upload": {
-      "post": {
+    "/api/Sales/{storeCode}/{productCode}": {
+      "get": {
         "tags": [
           "Sales"
         ],
-        "requestBody": {
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "file": {
-                    "$ref": "#/components/schemas/IFormFile"
-                  }
-                }
-              }
+        "parameters": [
+          {
+            "name": "storeCode",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
             }
           },
-          "required": true
-        },
+          {
+            "name": "productCode",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK"
@@ -135,22 +180,121 @@
         }
       }
     },
-    "/api/Sales/upload-single-store": {
+    "/api/Sales/store/{storeCode}": {
+      "get": {
+        "tags": [
+          "Sales"
+        ],
+        "parameters": [
+          {
+            "name": "storeCode",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Sales/product/{productCode}": {
+      "get": {
+        "tags": [
+          "Sales"
+        ],
+        "parameters": [
+          {
+            "name": "productCode",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Sales/range": {
+      "get": {
+        "tags": [
+          "Sales"
+        ],
+        "parameters": [
+          {
+            "name": "start",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Sales/daily/{storeCode}/{productCode}": {
+      "get": {
+        "tags": [
+          "Sales"
+        ],
+        "parameters": [
+          {
+            "name": "storeCode",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "productCode",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Sales/upload": {
       "post": {
         "tags": [
           "Sales"
         ],
         "parameters": [
           {
-            "name": "storeId",
+            "name": "uploadType",
             "in": "query",
             "schema": {
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
-              "format": "int32"
+              "$ref": "#/components/schemas/UploadType"
             }
           }
         ],
@@ -176,10 +320,20 @@
         }
       }
     },
-    "/api/Stores": {
+    "/api/Store": {
+      "get": {
+        "tags": [
+          "Store"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
       "post": {
         "tags": [
-          "Stores"
+          "Store"
         ],
         "requestBody": {
           "content": {
@@ -206,10 +360,42 @@
             "description": "OK"
           }
         }
-      },
+      }
+    },
+    "/api/Store/{code}": {
       "get": {
         "tags": [
-          "Stores"
+          "Store"
+        ],
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Store"
+        ],
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
         ],
         "responses": {
           "200": {
@@ -218,10 +404,10 @@
         }
       }
     },
-    "/api/Stores/bulk": {
+    "/api/Store/bulk": {
       "post": {
         "tags": [
-          "Stores"
+          "Store"
         ],
         "requestBody": {
           "content": {
@@ -269,6 +455,7 @@
       "Product": {
         "required": [
           "name",
+          "productCode",
           "category"
         ],
         "type": "object",
@@ -284,6 +471,9 @@
           "name": {
             "type": "string"
           },
+          "productCode": {
+            "type": "string"
+          },
           "category": {
             "type": "string"
           }
@@ -292,6 +482,7 @@
       "Store": {
         "required": [
           "name",
+          "storeCode",
           "location"
         ],
         "type": "object",
@@ -307,10 +498,16 @@
           "name": {
             "type": "string"
           },
+          "storeCode": {
+            "type": "string"
+          },
           "location": {
             "type": "string"
           }
         }
+      },
+      "UploadType": {
+        "type": "integer"
       }
     }
   },
@@ -322,7 +519,7 @@
       "name": "Sales"
     },
     {
-      "name": "Stores"
+      "name": "Store"
     }
   ]
 }

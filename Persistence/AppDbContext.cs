@@ -14,8 +14,21 @@ namespace RetailDemandForecastingAPI.Persistence
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<Inventory>()
-                .HasIndex(i => new { i.ProductId, i.StoreId })
+            base.OnModelCreating(modelBuilder);
+
+           
+            modelBuilder.Entity<Store>()
+                .HasIndex(s => s.StoreCode)
+                .IsUnique();
+
+            
+            modelBuilder.Entity<Product>()
+                .HasIndex(p => p.ProductCode)
+                .IsUnique();
+
+            
+            modelBuilder.Entity<Sale>()
+                .HasIndex(s => new { s.ProductId, s.StoreId, s.Date })
                 .IsUnique();
         }
     }

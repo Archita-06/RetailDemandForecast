@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("RetailDemandForecastingAPI")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+fe848544cd78d5c522a2746cb7bfd11aaa5d4ffb")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+27540f3bf22a7f1d620ab1cabe0fe495a4226f03")]
 [assembly: System.Reflection.AssemblyProductAttribute("RetailDemandForecastingAPI")]
 [assembly: System.Reflection.AssemblyTitleAttribute("RetailDemandForecastingAPI")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

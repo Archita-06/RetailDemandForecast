@@ -64,6 +64,7 @@ namespace RetailDemandForecastingAPI.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ProductCode = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     Category = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
                 constraints: table =>
@@ -78,6 +79,7 @@ namespace RetailDemandForecastingAPI.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    StoreCode = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     Location = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
                 constraints: table =>
@@ -94,7 +96,9 @@ namespace RetailDemandForecastingAPI.Migrations
                     ProductId = table.Column<int>(type: "int", nullable: false),
                     StoreId = table.Column<int>(type: "int", nullable: false),
                     Date = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    QuantitySold = table.Column<int>(type: "int", nullable: false)
+                    QuantitySold = table.Column<int>(type: "int", nullable: false),
+                    BatchId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    UploadType = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -114,20 +118,27 @@ namespace RetailDemandForecastingAPI.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Inventories_ProductId_StoreId",
-                table: "Inventories",
-                columns: new[] { "ProductId", "StoreId" },
+                name: "IX_Products_ProductCode",
+                table: "Products",
+                column: "ProductCode",
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_Sales_ProductId",
+                name: "IX_Sales_ProductId_StoreId_Date",
                 table: "Sales",
-                column: "ProductId");
+                columns: new[] { "ProductId", "StoreId", "Date" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Sales_StoreId",
                 table: "Sales",
                 column: "StoreId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Stores_StoreCode",
+                table: "Stores",
+                column: "StoreCode",
+                unique: true);
         }
 
         /// <inheritdoc />
