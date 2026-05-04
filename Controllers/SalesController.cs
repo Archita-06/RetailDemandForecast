@@ -167,101 +167,135 @@ namespace RetailDemandForecastingAPI.Controllers
             return Ok(sales);
         }
 
- 
+
         [HttpPost("upload")]
         public async Task<IActionResult> UploadSales(IFormFile file, [FromQuery] UploadType uploadType)
         {
-            if (file == null || file.Length == 0)
-                return BadRequest("File is empty");
-
-            var extension = Path.GetExtension(file.FileName).ToLower();
-
-            List<SalesInput> rawData;
-            int skipped;
-
-            if (extension == ".csv")
-                (rawData, skipped) = await ProcessCsv(file);
-            else if (extension == ".xlsx")
-                (rawData, skipped) = await ProcessExcel(file);
-            else
-                return BadRequest("Unsupported file format.");
-
-            if (rawData.Count == 0)
-                return BadRequest("No valid data");
-
- 
-            var groupedData = rawData
-                .GroupBy(x => new { x.StoreCode, x.ProductCode, x.Date })
-                .Select(g => new
-                {
-                    g.Key.StoreCode,
-                    g.Key.ProductCode,
-                    g.Key.Date,
-                    Quantity = g.Sum(x => x.Quantity)
-                })
-                .ToList();
-
-            var batchId = Guid.NewGuid().ToString();
-
-            int inserted = 0, updated = 0;
-
-            foreach (var item in groupedData)
+            var upload = new DataUpload
             {
-                var store = await _context.Stores
-                    .FirstOrDefaultAsync(s => s.StoreCode == item.StoreCode);
+                FileName = file.FileName,
+                UploadedAt = DateTime.UtcNow,
+                Status = "PROCESSING"
+            };
 
-                var product = await _context.Products
-                    .FirstOrDefaultAsync(p => p.ProductCode == item.ProductCode);
-
-                if (store == null || product == null)
-                {
-                    skipped++;
-                    continue;
-                }
-
-                var existing = await _context.Sales.FirstOrDefaultAsync(s =>
-                    s.StoreId == store.Id &&
-                    s.ProductId == product.Id &&
-                    s.Date == item.Date);
-
-                if (existing == null)
-                {
-                    await _context.Sales.AddAsync(new Sale
-                    {
-                        StoreId = store.Id,
-                        ProductId = product.Id,
-                        Date = item.Date,
-                        QuantitySold = item.Quantity,
-                        BatchId = batchId,
-                        UploadType = uploadType
-                    });
-                    inserted++;
-                }
-                else
-                {
-                    if (uploadType == UploadType.INCREMENTAL)
-                    {
-                        existing.QuantitySold += item.Quantity;
-                    }
-                    else if (uploadType == UploadType.SNAPSHOT &&
-                             item.Quantity > existing.QuantitySold)
-                    {
-                        existing.QuantitySold = item.Quantity;
-                    }
-
-                    existing.BatchId = batchId;
-                    existing.UploadType = uploadType;
-
-                    updated++;
-                }
-            }
-
+            await _context.DataUploads.AddAsync(upload);
             await _context.SaveChangesAsync();
 
-            return Ok(new { batchId, inserted, updated, skipped });
+            try
+            {
+                if (file == null || file.Length == 0)
+                {
+                    upload.Status = "FAILED";
+                    await _context.SaveChangesAsync();
+                    return BadRequest("File is empty");
+                }
+
+                var extension = Path.GetExtension(file.FileName).ToLower();
+
+                List<SalesInput> rawData;
+                int skipped;
+
+                if (extension == ".csv")
+                    (rawData, skipped) = await ProcessCsv(file);
+                else if (extension == ".xlsx")
+                    (rawData, skipped) = await ProcessExcel(file);
+                else
+                {
+                    upload.Status = "FAILED";
+                    await _context.SaveChangesAsync();
+                    return BadRequest("Unsupported file format.");
+                }
+
+                if (rawData.Count == 0)
+                {
+                    upload.Status = "FAILED";
+                    await _context.SaveChangesAsync();
+                    return BadRequest("No valid data");
+                }
+
+                var groupedData = rawData
+                    .GroupBy(x => new { x.StoreCode, x.ProductCode, x.Date })
+                    .Select(g => new
+                    {
+                        g.Key.StoreCode,
+                        g.Key.ProductCode,
+                        g.Key.Date,
+                        Quantity = g.Sum(x => x.Quantity)
+                    })
+                    .ToList();
+
+                var batchId = Guid.NewGuid().ToString();
+
+                int inserted = 0, updated = 0;
+
+                foreach (var item in groupedData)
+                {
+                    var store = await _context.Stores
+                        .FirstOrDefaultAsync(s => s.StoreCode == item.StoreCode);
+
+                    var product = await _context.Products
+                        .FirstOrDefaultAsync(p => p.ProductCode == item.ProductCode);
+
+                    if (store == null || product == null)
+                    {
+                        skipped++;
+                        continue;
+                    }
+
+                    var existing = await _context.Sales.FirstOrDefaultAsync(s =>
+                        s.StoreId == store.Id &&
+                        s.ProductId == product.Id &&
+                        s.Date == item.Date);
+
+                    if (existing == null)
+                    {
+                        await _context.Sales.AddAsync(new Sale
+                        {
+                            StoreId = store.Id,
+                            ProductId = product.Id,
+                            Date = item.Date,
+                            QuantitySold = item.Quantity,
+                            BatchId = batchId,
+                            UploadType = uploadType
+                        });
+
+                        inserted++;
+                    }
+                    else
+                    {
+                        if (uploadType == UploadType.INCREMENTAL)
+                        {
+                            existing.QuantitySold += item.Quantity;
+                        }
+                        else if (uploadType == UploadType.SNAPSHOT &&
+                                 item.Quantity > existing.QuantitySold)
+                        {
+                            existing.QuantitySold = item.Quantity;
+                        }
+
+                        existing.BatchId = batchId;
+                        existing.UploadType = uploadType;
+
+                        updated++;
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+
+                upload.Status = "SUCCESS";
+                await _context.SaveChangesAsync();
+
+                return Ok(new { batchId, inserted, updated, skipped });
+            }
+            catch (Exception)
+            {
+                upload.Status = "FAILED";
+                await _context.SaveChangesAsync();
+                throw;
+            }
         }
 
- 
+
         private async Task<(List<SalesInput>, int)> ProcessCsv(IFormFile file)
         {
             var list = new List<SalesInput>();
